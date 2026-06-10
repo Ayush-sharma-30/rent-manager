@@ -1,0 +1,109 @@
+# Render Blueprint — deploys the Rent Manager backend.
+#
+# Creates a managed Postgres + Redis, the FastAPI web service, and the Celery
+# worker + beat scheduler, all from apps/backend/Dockerfile.
+#
+# Render injects DATABASE_URL (from the DB) and REDIS_URL (from Redis) as bare
+# connection strings; config.py derives the async/sync SQLAlchemy URLs from them.
+#
+# Cost note: the web service, Postgres and Redis run on Render's free tier. The
+# `worker` and `beat` services are NOT available on free — they need a paid
+# (starter) instance. They only power the AUTOMATIC scheduled reminders /
+# weekly summary. If you want a fully free deploy, delete the rent-worker and
+# rent-beat blocks below; everything else (manual reminders, payments, all CRUD,
+# dashboard) works without them.
+
+databases:
+  - name: rent-db
+    databaseName: rent_manager
+    user: rent
+    plan: free
+
+services:
+  - type: redis
+    name: rent-redis
+    plan: free
+    ipAllowList: [] # internal connections only
+
+  - type: web
+    name: rent-api
+    runtime: docker
+    plan: free
+    dockerfilePath: ./apps/backend/Dockerfile
+    dockerContext: ./apps/backend
+    healthCheckPath: /health
+    # Run migrations, seed demo data (idempotent — skips if already seeded),
+    # then start the API on the port Render assigns.
+    dockerCommand: sh -c "alembic upgrade head && python -m scripts.seed_dev_data && uvicorn rent_manager.main:app --host 0.0.0.0 --port $PORT"
+    envVars:
+      - fromGroup: rent-env
+      - key: DATABASE_URL
+        fromDatabase:
+          name: rent-db
+          property: connectionString
+      - key: REDIS_URL
+        fromService:
+          type: redis
+          name: rent-redis
+          property: connectionString
+
+  - type: worker
+    name: rent-worker
+    runtime: docker
+    plan: starter # background workers are not on the free tier
+    dockerfilePath: ./apps/backend/Dockerfile
+    dockerContext: ./apps/backend
+    dockerCommand: celery -A rent_manager.workers.celery_app worker --loglevel=info -Q default,notifications,webhooks,scheduled --concurrency=2
+    envVars:
+      - fromGroup: rent-env
+      - key: DATABASE_URL
+        fromDatabase:
+          name: rent-db
+          property: connectionString
+      - key: REDIS_URL
+        fromService:
+          type: redis
+          name: rent-redis
+          property: connectionString
+
+  - type: worker
+    name: rent-beat
+    runtime: docker
+    plan: starter
+    dockerfilePath: ./apps/backend/Dockerfile
+    dockerContext: ./apps/backend
+    dockerCommand: celery -A rent_manager.workers.celery_app beat --loglevel=info
+    envVars:
+      - fromGroup: rent-env
+      - key: DATABASE_URL
+        fromDatabase:
+          name: rent-db
+          property: connectionString
+      - key: REDIS_URL
+        fromService:
+          type: redis
+          name: rent-redis
+          property: connectionString
+
+envVarGroups:
+  - name: rent-env
+    envVars:
+      # "demo" (not "production") keeps the dev OTP hint visible on the verify
+      # screen so anyone you share the link with can log in. Set to "production"
+      # to hide it.
+      - key: ENV
+        value: demo
+      - key: JWT_SECRET
+        generateValue: true
+      - key: OTP_FIXED
+        value: "123456"
+      - key: CORS_ALLOWED_ORIGINS
+        value: "*"
+      - key: LOG_LEVEL
+        value: INFO
+      - key: WHATSAPP_ENABLED
+        value: "false"
+      - key: SES_ENABLED
+        value: "false"
+      - key: RAZORPAY_ENABLED
+        value: "false"

@@ -1,0 +1,39 @@
+{
+  "expo": {
+    "name": "Rent Manager",
+    "slug": "rent-manager",
+    "version": "0.1.0",
+    "orientation": "portrait",
+    "userInterfaceStyle": "light",
+    "scheme": "rentmanager",
+    "newArchEnabled": false,
+    "splash": {
+      "resizeMode": "contain",
+      "backgroundColor": "#0F172A"
+    },
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "in.rentmanager.app"
+    },
+    "android": {
+      "package": "in.rentmanager.app",
+      "adaptiveIcon": {
+        "backgroundColor": "#0F172A"
+      }
+    },
+    "web": {
+      "bundler": "metro",
+      "output": "single"
+    },
+    "plugins": [
+      "expo-router",
+      "expo-font"
+    ],
+    "experiments": {
+      "typedRoutes": false
+    },
+    "extra": {
+      "apiBaseUrl": "http://localhost:8000"
+    }
+  }
+}

@@ -1,0 +1,17 @@
+__pycache__/
+*.pyc
+*.pyo
+*.egg-info/
+.venv/
+.env
+*.sqlite3
+.DS_Store
+.idea/
+.vscode/
+
+# Node / Expo / web build
+node_modules/
+apps/mobile/dist/
+apps/mobile/.expo/
+.playwright-mcp/
+*.log
