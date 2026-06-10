@@ -24,9 +24,8 @@ services:
     dockerfilePath: ./apps/backend/Dockerfile
     dockerContext: ./apps/backend
     healthCheckPath: /health
-    # Run migrations, seed demo data (idempotent — skips if already seeded),
-    # then start the API on the port Render assigns.
-    dockerCommand: sh -c "alembic upgrade head && python -m scripts.seed_dev_data && uvicorn rent_manager.main:app --host 0.0.0.0 --port $PORT"
+    # Startup (migrate + seed + uvicorn on $PORT) is the image's CMD
+    # (apps/backend/start.sh), so no dockerCommand override is needed here.
     envVars:
       - fromGroup: rent-env
       - key: DATABASE_URL

@@ -18,9 +18,13 @@ RUN pip install --upgrade pip && pip install -e .
 COPY alembic.ini ./
 COPY migrations ./migrations
 COPY scripts ./scripts
+COPY start.sh ./
+RUN chmod +x start.sh
 
 ENV PYTHONPATH=/app/src
 
 EXPOSE 8000
 
-CMD ["uvicorn", "rent_manager.main:app", "--host", "0.0.0.0", "--port", "8000"]
+# Migrate + seed + launch the API on $PORT. (docker-compose and the Celery
+# worker/beat override this with their own `command`.)
+CMD ["/app/start.sh"]
