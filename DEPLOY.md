@@ -2,7 +2,9 @@
 
 Two pieces:
 
-- **Backend** (FastAPI + Postgres + Redis + Celery) → **Render**, from `render.yaml`.
+- **Backend** (FastAPI + Postgres) → **Render**, from `render.yaml`. Free tier:
+  Postgres + web service only. (Celery worker/Redis for auto-scheduled reminders
+  are paid and left out — see the commented block in `render.yaml`.)
 - **Frontend** (Expo web export) → **Vercel**, static SPA pointed at the backend.
 
 Order matters: deploy the backend first, grab its URL, then build the frontend
@@ -29,12 +31,11 @@ git push -u origin main
 
 1. Go to <https://dashboard.render.com> → **New** → **Blueprint**.
 2. Connect the GitHub repo you just pushed. Render auto-detects `render.yaml`.
-3. Review the plan: `rent-api`, `rent-db`, `rent-redis` are **free**;
-   `rent-worker` and `rent-beat` are **starter (paid)** because Render has no
-   free background workers.
-   - Want it 100% free? Open `render.yaml`, delete the `rent-worker` and
-     `rent-beat` service blocks, and re-push. You only lose the *automatic*
-     scheduled reminders — manual reminders, payments, and all CRUD still work.
+3. The blueprint is **free only**: `rent-db` (Postgres) + `rent-api` (web). No
+   paid services. (Automatic scheduled reminders are intentionally left out —
+   they'd need a paid Redis + worker; the commented block at the bottom of
+   `render.yaml` shows how to add them later. Manual reminders, payments, and
+   all CRUD work without them.)
 4. Click **Apply**. First build takes a few minutes (Docker build + migrations +
    demo-data seed run automatically on boot).
 5. When `rent-api` is **Live**, copy its URL, e.g.

@@ -1,17 +1,14 @@
-# Render Blueprint — deploys the Rent Manager backend.
+# Render Blueprint — deploys the Rent Manager backend (free tier only).
 #
-# Creates a managed Postgres + Redis, the FastAPI web service, and the Celery
-# worker + beat scheduler, all from apps/backend/Dockerfile.
+# Creates a managed Postgres and the FastAPI web service from
+# apps/backend/Dockerfile. Render injects DATABASE_URL as a bare connection
+# string; config.py derives the async/sync SQLAlchemy URLs from it.
 #
-# Render injects DATABASE_URL (from the DB) and REDIS_URL (from Redis) as bare
-# connection strings; config.py derives the async/sync SQLAlchemy URLs from them.
-#
-# Cost note: the web service, Postgres and Redis run on Render's free tier. The
-# `worker` and `beat` services are NOT available on free — they need a paid
-# (starter) instance. They only power the AUTOMATIC scheduled reminders /
-# weekly summary. If you want a fully free deploy, delete the rent-worker and
-# rent-beat blocks below; everything else (manual reminders, payments, all CRUD,
-# dashboard) works without them.
+# Everything you use works on free: manual reminders, payments, all CRUD, the
+# dashboard. The only thing not running is the *automatic* scheduled reminder
+# ladder / weekly summary — those need a Celery worker + Redis, which require
+# Render's paid (starter) plan. To add them later, see the commented block at
+# the bottom of this file.
 
 databases:
   - name: rent-db
@@ -20,11 +17,6 @@ databases:
     plan: free
 
 services:
-  - type: redis
-    name: rent-redis
-    plan: free
-    ipAllowList: [] # internal connections only
-
   - type: web
     name: rent-api
     runtime: docker
@@ -40,49 +32,6 @@ services:
       - key: DATABASE_URL
         fromDatabase:
           name: rent-db
-          property: connectionString
-      - key: REDIS_URL
-        fromService:
-          type: redis
-          name: rent-redis
-          property: connectionString
-
-  - type: worker
-    name: rent-worker
-    runtime: docker
-    plan: starter # background workers are not on the free tier
-    dockerfilePath: ./apps/backend/Dockerfile
-    dockerContext: ./apps/backend
-    dockerCommand: celery -A rent_manager.workers.celery_app worker --loglevel=info -Q default,notifications,webhooks,scheduled --concurrency=2
-    envVars:
-      - fromGroup: rent-env
-      - key: DATABASE_URL
-        fromDatabase:
-          name: rent-db
-          property: connectionString
-      - key: REDIS_URL
-        fromService:
-          type: redis
-          name: rent-redis
-          property: connectionString
-
-  - type: worker
-    name: rent-beat
-    runtime: docker
-    plan: starter
-    dockerfilePath: ./apps/backend/Dockerfile
-    dockerContext: ./apps/backend
-    dockerCommand: celery -A rent_manager.workers.celery_app beat --loglevel=info
-    envVars:
-      - fromGroup: rent-env
-      - key: DATABASE_URL
-        fromDatabase:
-          name: rent-db
-          property: connectionString
-      - key: REDIS_URL
-        fromService:
-          type: redis
-          name: rent-redis
           property: connectionString
 
 envVarGroups:
@@ -107,3 +56,43 @@ envVarGroups:
         value: "false"
       - key: RAZORPAY_ENABLED
         value: "false"
+
+# ---------------------------------------------------------------------------
+# OPTIONAL — automatic scheduled reminders (PAID: needs a Redis + 2 workers).
+# Uncomment this block and add the matching REDIS_URL env to rent-api above:
+#
+#   - key: REDIS_URL
+#     fromService: { type: redis, name: rent-redis, property: connectionString }
+#
+# services:
+#   - type: redis
+#     name: rent-redis
+#     plan: free
+#     ipAllowList: []
+#   - type: worker
+#     name: rent-worker
+#     runtime: docker
+#     plan: starter
+#     dockerfilePath: ./apps/backend/Dockerfile
+#     dockerContext: ./apps/backend
+#     dockerCommand: celery -A rent_manager.workers.celery_app worker --loglevel=info -Q default,notifications,webhooks,scheduled --concurrency=2
+#     envVars:
+#       - fromGroup: rent-env
+#       - key: DATABASE_URL
+#         fromDatabase: { name: rent-db, property: connectionString }
+#       - key: REDIS_URL
+#         fromService: { type: redis, name: rent-redis, property: connectionString }
+#   - type: worker
+#     name: rent-beat
+#     runtime: docker
+#     plan: starter
+#     dockerfilePath: ./apps/backend/Dockerfile
+#     dockerContext: ./apps/backend
+#     dockerCommand: celery -A rent_manager.workers.celery_app beat --loglevel=info
+#     envVars:
+#       - fromGroup: rent-env
+#       - key: DATABASE_URL
+#         fromDatabase: { name: rent-db, property: connectionString }
+#       - key: REDIS_URL
+#         fromService: { type: redis, name: rent-redis, property: connectionString }
+# ---------------------------------------------------------------------------
