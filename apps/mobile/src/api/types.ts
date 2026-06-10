@@ -104,6 +104,16 @@ export interface LeaseExpiringItem {
   days_until_expiry: number;
 }
 
+export interface Invoice {
+  id: string;
+  tenant_id: string;
+  billing_month: string;
+  due_date: string;
+  amount_due: string;
+  amount_paid: string;
+  status: string;
+}
+
 export interface ReminderResult {
   sent: number;
   skipped: number;

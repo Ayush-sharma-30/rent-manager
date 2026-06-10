@@ -2,6 +2,7 @@ import { useCallback } from "react";
 
 import { useLocaleStore } from "@/state/locale.store";
 import { TRANSLATIONS, type Dict, type Locale } from "@/i18n/translations";
+import { localizeData, MONTHS_SHORT } from "@/i18n/data";
 
 export type { Locale } from "@/i18n/translations";
 export { LOCALES } from "@/i18n/translations";
@@ -29,4 +30,28 @@ export function translate(locale: Locale, key: string, vars?: TVars): string {
 export function useT(): (key: string, vars?: TVars) => string {
   const locale = useLocaleStore((s) => s.locale);
   return useCallback((key: string, vars?: TVars) => translate(locale, key, vars), [locale]);
+}
+
+/** The current app locale (re-renders the caller when it changes). */
+export function useLocale(): Locale {
+  return useLocaleStore((s) => s.locale);
+}
+
+/** Localize a seeded data string (names/addresses/etc.) for the current locale. */
+export function useTd(): (value: string | null | undefined) => string {
+  const locale = useLocaleStore((s) => s.locale);
+  return useCallback((value: string | null | undefined) => localizeData(locale, value), [locale]);
+}
+
+/** Format an ISO date / Date with the month name in the given locale. */
+export function formatDateLocalized(
+  value: string | Date | null | undefined,
+  locale: Locale
+): string {
+  if (!value) return "";
+  const d = typeof value === "string" ? new Date(value) : value;
+  if (Number.isNaN(d.getTime())) return "";
+  const day = String(d.getDate()).padStart(2, "0");
+  const month = MONTHS_SHORT[locale][d.getMonth()];
+  return `${day} ${month} ${d.getFullYear()}`;
 }

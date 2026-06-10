@@ -9,11 +9,12 @@ import { Icon } from "@/components/Icon";
 import { Input } from "@/components/Input";
 import { api } from "@/api/client";
 import type { Property } from "@/api/types";
-import { useT } from "@/i18n";
+import { useT, useTd } from "@/i18n";
 import { colors, fontSize, fontWeight, radius, spacing } from "@/theme/tokens";
 
 export default function PropertiesScreen() {
   const t = useT();
+  const td = useTd();
   const [showAdd, setShowAdd] = useState(false);
   const [editing, setEditing] = useState<Property | null>(null);
   const properties = useQuery({
@@ -50,13 +51,13 @@ export default function PropertiesScreen() {
           <Pressable onPress={() => setEditing(item)}>
             <Card style={styles.row}>
               <View style={{ flex: 1 }}>
-                <Text style={styles.rowName}>{item.name}</Text>
+                <Text style={styles.rowName}>{td(item.name)}</Text>
                 <Text style={styles.rowMeta}>
                   {item.type === "pg" ? t("property.typePG") : t("property.typeApartment")}
-                  {item.area ? ` · ${item.area}` : ""} · {item.city}
+                  {item.area ? ` · ${td(item.area)}` : ""} · {td(item.city)}
                 </Text>
                 {item.address_line ? (
-                  <Text style={[styles.rowMeta, { marginTop: 2 }]}>{item.address_line}</Text>
+                  <Text style={[styles.rowMeta, { marginTop: 2 }]}>{td(item.address_line)}</Text>
                 ) : null}
               </View>
               <Icon name="chevronRight" color={colors.textSubtle} size={20} />

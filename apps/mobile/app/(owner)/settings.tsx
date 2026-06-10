@@ -7,7 +7,7 @@ import { Button } from "@/components/Button";
 import { Card } from "@/components/Card";
 import { useAuthStore } from "@/state/auth.store";
 import { useLocaleStore } from "@/state/locale.store";
-import { LOCALES, useT } from "@/i18n";
+import { LOCALES, useT, useTd } from "@/i18n";
 import { API_BASE_URL } from "@/api/client";
 import { colors, fontSize, fontWeight, radius, spacing } from "@/theme/tokens";
 import { formatPhone } from "@/utils/format";
@@ -15,6 +15,7 @@ import { formatPhone } from "@/utils/format";
 export default function SettingsScreen() {
   const router = useRouter();
   const t = useT();
+  const td = useTd();
   const user = useAuthStore((s) => s.user);
   const org = useAuthStore((s) => s.organization);
   const signOut = useAuthStore((s) => s.signOut);
@@ -64,7 +65,7 @@ export default function SettingsScreen() {
 
         <Card>
           <Text style={styles.sectionLabel}>{t("settings.signedInAs")}</Text>
-          <Text style={styles.bigName}>{user?.name ?? "—"}</Text>
+          <Text style={styles.bigName}>{user?.name ? td(user.name) : "—"}</Text>
           <Text style={styles.metaLine}>{user ? formatPhone(user.phone_e164) : ""}</Text>
           {user?.email ? <Text style={styles.metaLine}>{user.email}</Text> : null}
         </Card>
@@ -72,7 +73,7 @@ export default function SettingsScreen() {
         <Card>
           <Text style={styles.sectionLabel}>{t("settings.organization")}</Text>
           <View style={styles.orgRow}>
-            <Text style={styles.bigName}>{org?.name ?? "—"}</Text>
+            <Text style={styles.bigName}>{org?.name ? td(org.name) : "—"}</Text>
             <Badge label={(org?.tier ?? "pilot").toUpperCase()} tone="info" />
           </View>
           <Text style={styles.metaLine}>

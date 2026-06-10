@@ -131,6 +131,9 @@ const en: Dict = {
   "payment.save": "Save payment",
   "payment.validation": "Pick a tenant and enter an amount.",
   "payment.error": "Could not record payment",
+  "payment.dueLabel": "Outstanding due",
+  "payment.exceedsDue": "Amount can't exceed the tenant's due of {due}.",
+  "payment.noDue": "This tenant has no pending due.",
 
   // Settings
   "settings.title": "Settings",
@@ -284,6 +287,9 @@ const hi: Dict = {
   "payment.save": "भुगतान सहेजें",
   "payment.validation": "एक किरायेदार चुनें और राशि दर्ज करें।",
   "payment.error": "भुगतान दर्ज नहीं हो सका",
+  "payment.dueLabel": "बकाया राशि",
+  "payment.exceedsDue": "राशि किरायेदार की बकाया {due} से अधिक नहीं हो सकती।",
+  "payment.noDue": "इस किरायेदार का कोई बकाया नहीं है।",
 
   "settings.title": "सेटिंग्स",
   "settings.signedInAs": "साइन इन:",
@@ -434,6 +440,9 @@ const kn: Dict = {
   "payment.save": "ಪಾವತಿ ಉಳಿಸಿ",
   "payment.validation": "ಬಾಡಿಗೆದಾರರನ್ನು ಆರಿಸಿ ಮತ್ತು ಮೊತ್ತ ನಮೂದಿಸಿ.",
   "payment.error": "ಪಾವತಿ ದಾಖಲಿಸಲಾಗಲಿಲ್ಲ",
+  "payment.dueLabel": "ಬಾಕಿ ಮೊತ್ತ",
+  "payment.exceedsDue": "ಮೊತ್ತವು ಬಾಡಿಗೆದಾರರ ಬಾಕಿ {due} ಗಿಂತ ಹೆಚ್ಚಿರಬಾರದು.",
+  "payment.noDue": "ಈ ಬಾಡಿಗೆದಾರರಿಗೆ ಯಾವುದೇ ಬಾಕಿ ಇಲ್ಲ.",
 
   "settings.title": "ಸೆಟ್ಟಿಂಗ್‌ಗಳು",
   "settings.signedInAs": "ಸೈನ್ ಇನ್ ಆಗಿರುವವರು",

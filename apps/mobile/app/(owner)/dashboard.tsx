@@ -13,13 +13,15 @@ import { StatBlock } from "@/components/StatBlock";
 import { api } from "@/api/client";
 import type { DashboardSummary, LeaseExpiringItem, ReminderResult } from "@/api/types";
 import { useAuthStore } from "@/state/auth.store";
-import { useT } from "@/i18n";
+import { formatDateLocalized, useLocale, useT, useTd } from "@/i18n";
 import { colors, fontSize, fontWeight, radius, spacing } from "@/theme/tokens";
-import { formatINR, formatDate } from "@/utils/format";
+import { formatINR } from "@/utils/format";
 
 export default function DashboardScreen() {
   const router = useRouter();
   const t = useT();
+  const td = useTd();
+  const locale = useLocale();
   const user = useAuthStore((s) => s.user);
   const org = useAuthStore((s) => s.organization);
 
@@ -54,8 +56,8 @@ export default function DashboardScreen() {
       >
         <View style={styles.header}>
           <Text style={styles.greeting}>{greeting},</Text>
-          <Text style={styles.headerName}>{user?.name ?? t("dashboard.fallbackName")}</Text>
-          <Text style={styles.headerOrg}>{org?.name ?? t("dashboard.fallbackOrg")}</Text>
+          <Text style={styles.headerName}>{user?.name ? td(user.name) : t("dashboard.fallbackName")}</Text>
+          <Text style={styles.headerOrg}>{org?.name ? td(org.name) : t("dashboard.fallbackOrg")}</Text>
         </View>
 
         {summary.isError ? (
@@ -142,9 +144,9 @@ export default function DashboardScreen() {
                   style={[styles.row, idx > 0 && styles.rowDivider]}
                 >
                   <View style={{ flex: 1 }}>
-                    <Text style={styles.rowTitle}>{item.tenant_name}</Text>
+                    <Text style={styles.rowTitle}>{td(item.tenant_name)}</Text>
                     <Text style={styles.rowMeta}>
-                      {item.unit_identifier} · {t("dashboard.due", { date: formatDate(item.due_date) })}
+                      {td(item.unit_identifier)} · {t("dashboard.due", { date: formatDateLocalized(item.due_date, locale) })}
                     </Text>
                     <RemindButton tenantId={item.tenant_id} tenantName={item.tenant_name} />
                   </View>
@@ -174,8 +176,8 @@ export default function DashboardScreen() {
               {data.recently_paid.slice(0, 5).map((item, idx) => (
                 <View key={item.payment_id} style={[styles.row, idx > 0 && styles.rowDivider]}>
                   <View style={{ flex: 1 }}>
-                    <Text style={styles.rowTitle}>{item.tenant_name}</Text>
-                    <Text style={styles.rowMeta}>{t("dashboard.paidOn", { date: formatDate(item.paid_on) })}</Text>
+                    <Text style={styles.rowTitle}>{td(item.tenant_name)}</Text>
+                    <Text style={styles.rowMeta}>{t("dashboard.paidOn", { date: formatDateLocalized(item.paid_on, locale) })}</Text>
                   </View>
                   <Text style={[styles.amount, { color: colors.success }]}>
                     +{formatINR(item.amount)}
@@ -202,9 +204,9 @@ export default function DashboardScreen() {
               {expiringData!.leases.slice(0, 4).map((l, idx) => (
                 <View key={l.lease_id} style={[styles.row, idx > 0 && styles.rowDivider]}>
                   <View style={{ flex: 1 }}>
-                    <Text style={styles.rowTitle}>{l.tenant_name}</Text>
+                    <Text style={styles.rowTitle}>{td(l.tenant_name)}</Text>
                     <Text style={styles.rowMeta}>
-                      {l.unit_identifier} · {t("dashboard.endsOn", { date: formatDate(l.end_date) })}
+                      {td(l.unit_identifier)} · {t("dashboard.endsOn", { date: formatDateLocalized(l.end_date, locale) })}
                     </Text>
                   </View>
                   <Badge

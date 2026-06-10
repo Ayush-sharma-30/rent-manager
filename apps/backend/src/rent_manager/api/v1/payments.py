@@ -159,6 +159,16 @@ async def record_payment(
                 .order_by(Invoice.due_date.asc())
             )
         ).scalars().all()
+        outstanding = sum(
+            (inv.amount_due - inv.amount_paid for inv in open_invoices), Decimal("0")
+        )
+        if body.amount > outstanding:
+            # Safety net — the client validates this first with a localized
+            # message; this guards direct API use.
+            raise HTTPException(
+                status_code=422,
+                detail=f"Amount exceeds the tenant's total due of ₹{outstanding}.",
+            )
         touched, _leftover = _allocate_fifo(list(open_invoices), body.amount)
         if touched:
             invoice = touched[0]

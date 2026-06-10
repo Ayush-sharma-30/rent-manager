@@ -48,19 +48,29 @@ async def get_summary(
             )
         )
     ).scalar_one()
-    counts = (
+    today = date.today()
+    # Bucket this month's invoices. "overdue" is driven by the due date rather
+    # than the status column, because in deployments without the Celery worker
+    # nothing flips pending -> overdue. An invoice is overdue when it's still
+    # open (not fully paid) and its due date has passed.
+    status_rows = (
         await db.execute(
-            select(Invoice.status, func.count())
-            .where(
+            select(Invoice.status, Invoice.due_date).where(
                 Invoice.organization_id == current.organization_id,
                 Invoice.billing_month == start,
             )
-            .group_by(Invoice.status)
         )
     ).all()
-    count_map = {s: c for s, c in counts}
-
-    today = date.today()
+    paid_count = 0
+    open_count = 0  # all unpaid invoices (the "pending" bucket / outstanding)
+    overdue_count = 0
+    for inv_status, inv_due in status_rows:
+        if inv_status == "paid":
+            paid_count += 1
+            continue
+        open_count += 1
+        if inv_due < today:
+            overdue_count += 1
     needs_rows = (
         await db.execute(
             select(Invoice, Tenant, Unit)
@@ -111,9 +121,9 @@ async def get_summary(
         month=start.isoformat()[:7],
         collected=Decimal(collected),
         target=Decimal(target),
-        paid_count=count_map.get("paid", 0),
-        pending_count=count_map.get("pending", 0) + count_map.get("partial", 0),
-        overdue_count=count_map.get("overdue", 0),
+        paid_count=paid_count,
+        pending_count=open_count,
+        overdue_count=overdue_count,
         needs_attention=needs_attention,
         recently_paid=recently_paid,
     )

@@ -17,16 +17,18 @@ import { Button } from "@/components/Button";
 import { Card } from "@/components/Card";
 import { Input } from "@/components/Input";
 import { api } from "@/api/client";
-import type { Payment, Tenant } from "@/api/types";
-import { useT } from "@/i18n";
+import type { Invoice, Payment, Tenant } from "@/api/types";
+import { useT, useTd } from "@/i18n";
 import { colors, fontSize, fontWeight, radius, spacing } from "@/theme/tokens";
 import { formatINR } from "@/utils/format";
 
 const METHODS = ["upi", "bank_transfer", "cash", "other"] as const;
+const OPEN_STATUSES = ["pending", "partial", "overdue"];
 
 export default function RecordPayment() {
   const router = useRouter();
   const t = useT();
+  const td = useTd();
   const queryClient = useQueryClient();
 
   const [tenantId, setTenantId] = useState<string | null>(null);
@@ -39,6 +41,16 @@ export default function RecordPayment() {
     queryKey: ["tenants", "all"],
     queryFn: () => api<Tenant[]>("/api/v1/tenants"),
   });
+
+  // Outstanding due for the chosen tenant, used to cap the payment amount.
+  const invoices = useQuery<Invoice[]>({
+    queryKey: ["invoices", "tenant", tenantId],
+    queryFn: () => api<Invoice[]>(`/api/v1/invoices?tenant_id=${tenantId}`),
+    enabled: !!tenantId,
+  });
+  const due = (invoices.data ?? [])
+    .filter((inv: Invoice) => OPEN_STATUSES.includes(inv.status))
+    .reduce((sum: number, inv: Invoice) => sum + (Number(inv.amount_due) - Number(inv.amount_paid)), 0);
 
   const mutation = useMutation({
     mutationFn: () =>
@@ -55,6 +67,7 @@ export default function RecordPayment() {
     onSuccess: () => {
       void queryClient.invalidateQueries({ queryKey: ["dashboard"] });
       void queryClient.invalidateQueries({ queryKey: ["payments"] });
+      void queryClient.invalidateQueries({ queryKey: ["invoices"] });
       router.back();
     },
     onError: (err) => setError(err instanceof Error ? err.message : t("payment.error")),
@@ -88,7 +101,7 @@ export default function RecordPayment() {
                       tenantId === tenant.id && styles.tenantChipTextSelected,
                     ]}
                   >
-                    {tenant.name}
+                    {td(tenant.name)}
                   </Text>
                 </Pressable>
               ))}
@@ -101,9 +114,13 @@ export default function RecordPayment() {
           <Input
             label={t("payment.amount")}
             value={amount}
-            onChangeText={(v) => setAmount(v.replace(/[^\d.]/g, ""))}
+            onChangeText={(v) => {
+              setAmount(v.replace(/[^\d.]/g, ""));
+              if (error) setError(null);
+            }}
             keyboardType="decimal-pad"
             placeholder="20000"
+            hint={selected && invoices.isSuccess ? t("payment.dueLabel") + ": " + formatINR(due) : undefined}
           />
 
           <View style={styles.field}>
@@ -139,7 +156,7 @@ export default function RecordPayment() {
                 <Badge label={method.replace("_", " ").toUpperCase()} tone="info" />
               </View>
               <Text style={styles.previewAmount}>{formatINR(amount)}</Text>
-              <Text style={styles.previewMeta}>{t("payment.from", { name: selected.name })}</Text>
+              <Text style={styles.previewMeta}>{t("payment.from", { name: td(selected.name) })}</Text>
             </Card>
           ) : null}
 
@@ -153,6 +170,17 @@ export default function RecordPayment() {
               if (!tenantId || !amount || Number(amount) <= 0) {
                 setError(t("payment.validation"));
                 return;
+              }
+              // Block payments larger than what the tenant actually owes.
+              if (invoices.isSuccess) {
+                if (due <= 0) {
+                  setError(t("payment.noDue"));
+                  return;
+                }
+                if (Number(amount) > due) {
+                  setError(t("payment.exceedsDue", { due: formatINR(due) }));
+                  return;
+                }
               }
               setError(null);
               mutation.mutate();

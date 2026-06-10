@@ -10,13 +10,14 @@ import { Icon } from "@/components/Icon";
 import { Input } from "@/components/Input";
 import { api } from "@/api/client";
 import type { Tenant } from "@/api/types";
-import { useT } from "@/i18n";
+import { useT, useTd } from "@/i18n";
 import { colors, fontSize, fontWeight, spacing } from "@/theme/tokens";
 import { formatPhone } from "@/utils/format";
 
 export default function TenantsList() {
   const router = useRouter();
   const t = useT();
+  const td = useTd();
   const [q, setQ] = useState("");
   const tenants = useQuery({
     queryKey: ["tenants", { q }],
@@ -62,7 +63,7 @@ export default function TenantsList() {
                 <Text style={styles.avatarText}>{initials(item.name)}</Text>
               </View>
               <View style={{ flex: 1 }}>
-                <Text style={styles.rowName}>{item.name}</Text>
+                <Text style={styles.rowName}>{td(item.name)}</Text>
                 <Text style={styles.rowMeta}>{formatPhone(item.phone_e164)}</Text>
                 {item.email ? <Text style={styles.rowMeta}>{item.email}</Text> : null}
               </View>

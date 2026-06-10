@@ -6,12 +6,14 @@ import { Badge } from "@/components/Badge";
 import { Card } from "@/components/Card";
 import { api } from "@/api/client";
 import type { Lease, Tenant } from "@/api/types";
-import { useT } from "@/i18n";
+import { formatDateLocalized, useLocale, useT, useTd } from "@/i18n";
 import { colors, fontSize, fontWeight, spacing } from "@/theme/tokens";
-import { formatDate, formatINR } from "@/utils/format";
+import { formatINR } from "@/utils/format";
 
 export default function LeasesScreen() {
   const t = useT();
+  const td = useTd();
+  const locale = useLocale();
   const leases = useQuery({
     queryKey: ["leases"],
     queryFn: () => api<Lease[]>("/api/v1/leases?status_filter=active"),
@@ -49,7 +51,7 @@ export default function LeasesScreen() {
           return (
             <Card>
               <View style={styles.cardHeader}>
-                <Text style={styles.cardTitle}>{tenant?.name ?? t("leases.tenantFallback")}</Text>
+                <Text style={styles.cardTitle}>{tenant?.name ? td(tenant.name) : t("leases.tenantFallback")}</Text>
                 {daysLeft < 45 ? (
                   <Badge
                     label={t("leases.daysLeft", { n: daysLeft })}
@@ -65,7 +67,7 @@ export default function LeasesScreen() {
                 <Meta label={t("leases.billingDay")} value={String(item.billing_day)} />
               </View>
               <Text style={styles.range}>
-                {formatDate(item.start_date)} → {formatDate(item.end_date)}
+                {formatDateLocalized(item.start_date, locale)} → {formatDateLocalized(item.end_date, locale)}
               </Text>
             </Card>
           );
