@@ -24,8 +24,10 @@ services:
     dockerfilePath: ./apps/backend/Dockerfile
     dockerContext: ./apps/backend
     healthCheckPath: /health
-    # Startup (migrate + seed + uvicorn on $PORT) is the image's CMD
-    # (apps/backend/start.sh), so no dockerCommand override is needed here.
+    # Single-token command (safe under Render's shell parsing). The script does
+    # migrate + seed + uvicorn on $PORT. Set explicitly (not omitted) because
+    # Render keeps a previously-set start command if this field is left blank.
+    dockerCommand: /app/start.sh
     envVars:
       - fromGroup: rent-env
       - key: DATABASE_URL
